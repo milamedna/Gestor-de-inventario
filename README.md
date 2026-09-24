@@ -1,4 +1,4 @@
-# Inventory management
+# Inventory Management
 In small business settings, inventory management is often a manual process, as medium and small businesses typically do not employ the automated systems used by large chains its common for the practices frequently used to lead to errors that can have financial repercussions, such as running out of stock or overstocking. These methods include taking inventory from memory or using paper records.
 
 At the moment, the combined cost of out-of-stocks and overstocks is $1.7 trillion, equal to 6.2% of global retail sales. Also 65.6% is attributed to being out of stock and a 34.4% to being overstock. Which means most organizations operate with just 83% inventory accuracy, meaning nearly one in five inventory records contains errors. Small and mid-sized businesses now hold 38% excess inventory above requirements, up significantly from prior years. These inaccuracies cascade through operations—triggering unnecessary reorders and causing stock outs. Achieving higher accuracy requires systematic processes and technology approaches.
@@ -7,11 +7,11 @@ I believe this is a problem that its very interesting to solve because of the am
 
 This program intends to solve this problem by making the solution an automated process. This program its an inventory management that will remember whether i had already a product catalog and its sales history, to keep the process there and if not it will create a new file to store the information. It will show you a menu with different options such as storing a new product, registering the stock entry and stock out, searching a product, showing the total value of the inventory and warning when you are nearly out of stock. 
 
-Resources:
-https://xorosoft.com/stockout-statistics/
-https://www.anchorgroup.tech/blog/wholesale-inventory-management-statistics
+References:
+Xorosoft. (2026). Stockout statistics every retailer should know. https://xorosoft.com/stockout-statistics/
+Anchor Group. (2026). 29 wholesale inventory management statistics every distributor should know in 2025. https://www.anchorgroup.tech/blog/wholesale-inventory-management-statistics
 
-Algorithm
+## Algorithm
 1. Check existence of product catalog file
 2. If it does upload it on a list
 3. Check existence of the sales history file
