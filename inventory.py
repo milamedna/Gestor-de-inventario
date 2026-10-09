@@ -19,7 +19,7 @@ def value_price(price,quantity):
     """
     Inputs: price and quantity of the product
     Outputs: value of price multiplied by quantity
-    Process: With the values of price and quantity of the product, calculates the amount of money it represents by price*quantity, it return the value
+    Process: With the values of price and quantity of the product, calculates the amount of money it represents by price*quantity, it returns the value
     """
     return price*quantity
 
@@ -53,46 +53,103 @@ def register_sale (initial, minusvalue):
     newinventory2= (initial-minusvalue)
     return newinventory2
 
+def menu():
+    print ("1. Show inventory")
+    print ("2. Register stock entry")
+    print ("3. Register sale")
+    print ("4. Exit")
+
+
 def main():
-    print("Enter at least 3 products: ")
-    product1= str(input("Enter the name of the product: "))
-    price1= float(input("Enter the unit price of the product: "))
-    quantity1= int(input("Enter the quantity of the product: "))
-    value1= value_price(price1,quantity1)
+    """
+The operations are with the initial inventory, the inventory doesn´t change with each sale or entering
+"""
+    print("Welcome! Enter 3 products: ")
+    counter= 1
+    while counter<=3:
+        product= str(input("Enter the name of the product: "))
+        price= float(input("Enter the unit price of the product: "))
+        quantity= int(input("Enter the quantity of the product: "))
+        value= value_price(price,quantity)
+        
+        if counter==1:
+            product1=product
+            price1=price
+            quantity1=quantity
+            value1= value
+            
+        elif counter==2:
+            product2=product
+            price2=price
+            quantity2=quantity
+            value2= value
+            
+        elif counter==3:
+            product3=product
+            price3=price
+            quantity3=quantity
+            value3= value
+        counter += 1
+    continuar = True   
+    while continuar==True:
+        menu()
+        option= int(input("What do you want to do? (Enter the number) "))
+        if option==1:
+            print ("Your actual inventory is: ")
+            print (product1,"=",quantity1,"items",price1,"$")
+            print (product2,"=",quantity2,"items",price2,"$")
+            print (product3,"=",quantity3,"items",price3,"$")
+            print ("Your total inventory is:",(total_value_inventory(value1,value2,value3)),"$")
+            per1= value1*100/(total_value_inventory(value1,value2,value3))
+            per2= value2*100/(total_value_inventory(value1,value2,value3))
+            per3= value3*100/(total_value_inventory(value1,value2,value3))
+            print (product1,"represents the",(f"{per1:.2f}"),"% of your total inventory")
+            print (product2,"represents the",(f"{per2:.2f}"),"% of your total inventory")
+            print (product3,"represents the",(f"{per3:.2f}"),"% of your total inventory")
+        elif option==2:
+            res=str(input("What item do you want register? "))
+            if res==product1:
+                initialstock= total_value_inventory(value1,value2,value3)
+                items= int(input("How many items are entering?"))
+                enter= items*(value1/quantity1)
+                print("Now your inventory is:",register_stock_entry(initialstock, enter))
+            elif res==product2:
+                initialstock= total_value_inventory(value1,value2,value3)
+                items= int(input("How many items are entering?"))
+                enter= items*(value2/quantity2)
+                print("Now your inventory is:",register_stock_entry(initialstock, enter))
+            elif res==product3:
+                initialstock= total_value_inventory(value1,value2,value3)
+                items= int(input("How many items are entering?"))
+                enter= items*(value3/quantity3)
+                print ("Now your inventory is:",register_stock_entry(initialstock, enter))
+        elif option==3:
+            res=str(input("What item do you want register? "))
+            if res==product1:
+                initialstock= total_value_inventory(value1,value2,value3)
+                items= int(input("How many items are getting out?"))
+                enter= items*(value1/quantity1)
+                print("Now your inventory is:",register_sale(initialstock, enter))
+            elif res==product2:
+                initialstock= total_value_inventory(value1,value2,value3)
+                items= int(input("How many items are getting out?"))
+                enter= items*(value2/quantity2)
+                print("Now your inventory is:",register_sale(initialstock, enter))
+            elif res==product3:
+                initialstock= total_value_inventory(value1,value2,value3)
+                items= int(input("How many items are getting out?"))
+                enter= items*(value3/quantity3)
+                print ("Now your inventory is:",register_sale(initialstock, enter))
+        elif option==4:
+            print ("Goodbye!")
+        
+        res= str(input("Do you want to go back to the initial menu?(y/n)"))
+        if res=="y":
+            continuar =True
+        elif res=="n":
+            continuar= False
     
-    Product2= str(input("Enter the name of the product: "))
-    price2= float(input("Enter the unit price of the product: "))
-    quantity2= int(input("Enter the quantity of the product: "))
-    value2= value_price(price2,quantity2)
-    
-    Product3= str(input("Enter the name of the product: "))
-    price3= float(input("Enter the unit price of the product: "))
-    quantity3= int(input("Enter the quantity of the product: "))
-    value3= value_price(price3,quantity3)
-    
-    stock= total_value_inventory(value1,value2,value3)
-    print ("Your initial stock is: ",stock)
-    entrys=int(input("Enter your stock entrys: "))
-    stock= register_stock_entry(stock,entrys)
-    sales= int(input("Enter your sales: "))
-    stock= register_sale(stock,sales)
-    print ("Your final inventory is: ",stock)
 main()
-# This function means to test the possible outcomes of the program
-def tests():
-    print("Functions tests")
-    print("Function value_price: ")
-    print("Obtained: ",value_price(10.0,5),"Expected: 50.0")
-    
-    print("Function total_value_inventory")
-    print("Obtained: ",total_value_inventory(10,20,30),"Expected: 60")
-    
-    print("Function register_stock_entry")
-    print("Obtained: ",register_stock_entry(100,50),"Expected: 150")
-    
-    print("Function register_sale")
-    print("Obtained: ",register_sale(150,20),"Expected: 130")
-tests()
-    
+
     
     
