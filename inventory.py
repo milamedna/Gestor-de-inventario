@@ -1,155 +1,210 @@
 
 """
-Inventory Manager
+Inventory Manager - Fase 3
 
 Author: Camila Medina
 
 Algorithm
-Inputs: price, quantity, product, entrys, sales
-Outputs: final inventory
+Inputs: how many products to register, name/price/quantity for each one, and later the product name and quantity for every entry or sale the user wants to register
+Outputs: the current inventory (with percentage of participation of each product) and confirmation messages for every entry/sale
 Process:
-The program asks the user to enter at least 3 products and to enter the name, price and quantity for each product. The program stores each product as value1, value2, value3. Then he program calls the function total_value_ inventory to calculate the total inventory and it stores the result in a variable called stock
-and prints it, then it asks the user for their entrys and stores it in stock, also their sales and it stores it again in stock. Prints to the user their final inventory after their entrys and sales and the program ends
-
+The program first asks how many products the user wants to manage, then for each one asks for its name, price and quantity, storing every product as a dictionary (name, price,
+quantity) inside a list called "inventario". A second structure, "history", is a matrix that keeps a record of every entry/sale registered, where each row is [type of movement, product name, quantity].
+The user then interacts with a menu to show the inventory, register an entry or a sale by typing the product's name, or exit. Because every product dictionary is stored by reference inside
+"inventory", every entry/sale updates the real data, so the inventory shown is always
+up to date.
 """
 
 
-# This function is going to be used to calculate the amount of money a ceirtan quantity of a product represents
-def value_price(price,quantity):
+# This function calculates the amount of money a certain quantity of a product represents
+def value_price(price, quantity):
     """
     Inputs: price and quantity of the product
     Outputs: value of price multiplied by quantity
-    Process: With the values of price and quantity of the product, calculates the amount of money it represents by price*quantity, it returns the value
+    Process: multiplies price by quantity and returns the result
     """
-    return price*quantity
+    return price * quantity
 
-#This function means to calculate the initial inventory summing up the values of the products introduced by the user 
-def total_value_inventory(value1, value2, value3):
+
+# This function calculates the total value of the whole inventory
+def total_value_inventory(inventory):
     """
-    Inputs: value of each product introduced by the user
-    Outputs: sum of values
-    Process: sums the three values and stores it, returns the value of the sum
+    Inputs: the inventory that is a list of dictionaries, each one of them with name,price and quantity
+    Outputs: the sum of the value of every product
+    Process: goes through every product in the list, calculates its value with the function value_price and adds it to a counter with the total
     """
-    total= value1+value2+value3
+    total = 0
+    for product in inventory:
+        total += value_price(product["price"], product["quantity"])
     return total
 
-#This function means to update the value of the inventory by adding up the entrys of the user
-def register_stock_entry (initials, plusvalue):
-    """
-    Inputs: initial stock, amount of entering money 
-    Outputs: Sum of new stock
-    Process: With the initial stock, sums this value with the new amount of money that is entering, returns this new value
-    """
-    newinventory= (initials+plusvalue)
-    return newinventory
 
-#This function means to update the value of the inventory by resting the sales of the user 
-def register_sale (initial, minusvalue):
+# This function updates the quantity of a product after a stock entry
+def register_stock_entry(currentQuantity, incomingQuantity):
     """
-    Inputs: initial stock, amount of outing money
-    Outputs: Value of new stock
-    Process: With the initial stock, calculates the initial stock minus the amount of money that is going out, returns the new value of the stock.
+    Inputs: current quantity of a product, quantity that is entering
+    Outputs: new quantity after the entry
+    Process: sums both quantities and returns the result
     """
-    newinventory2= (initial-minusvalue)
-    return newinventory2
+    return currentQuantity + incomingQuantity
 
-def menu():
-    print ("1. Show inventory")
-    print ("2. Register stock entry")
-    print ("3. Register sale")
-    print ("4. Exit")
+
+# This function updates the quantity of a product after a sale
+def register_sale(currentQuantity, outgoingQuantity):
+    """
+    Inputs: current quantity of a product, quantity that is leaving
+    Outputs: new quantity after the sale
+    Process: restss the outgoing quantity from the current quantity and returns it
+    """
+    return currentQuantity - outgoingQuantity
+
+
+# This function asks for a number and validates it until it is 0 or positive
+def ask_valid_value(message):
+    """
+    Inputs: the value the user enters
+    Outputs: a float number that is not negative
+    Process: asks for a number and while its negative keeps asking again
+    """
+    value = float(input(message))
+    while value < 0:
+        print("The value cant be negative, try again.")
+        value = float(input(message))
+    return value
+
+
+# This function asks for a product name to verify that is not empty and that is not already registered
+def ask_valid_name(message, inventory):
+    """
+    Inputs: the product the user enters, the current inventory
+    Outputs: a product name that is not empty and does not already exist in inventario
+    Process: asks for a name and, while it is empty or already exists, keeps asking again
+    """
+    name = input(message).strip()
+    while name == "" or search_product(inventory, name) != "the product does not exist":
+        if name == "":
+            print("The name cannot be empty, try again.")
+        else:
+            print("That product already exists, try again.")
+        name = input(message).strip()
+    return name
+
+
+# This function looks for a product by name inside the inventory (the matrix)
+def search_product(inventory, name):
+    """
+    Inputs: the inventory that is a list of dictionaries, the name to search
+    Outputs: the index where the product is found, or "the product does not exist" if it does not exist
+    Process: goes through the list comparing names until it finds a match
+    """
+    i = 0
+    while i < len(inventory):
+        if inventory[i]["name"] == name:
+            return i
+        i += 1
+    return "the product does not exist"
+
+
+# This function adds one row to the movements history matrix
+def register_movement(history, typeE, name, quantity):
+    """
+    Inputs: the history matrix, the type of movement ("Entry"/"Sale"), the product name and the quantity moved
+    Outputs: none, appends a new row [type, name, quantity] to the history matrix
+    Process: builds a row with the three values and appends it to historial
+    """
+    row= [typeE, name, quantity]
+    history.append(row)
+
+
+def show_menu():
+    print("1. Show inventory")
+    print("2. Register stock entry")
+    print("3. Register sale")
+    print("4. Exit")
+
+
+# This function prints the current state of the inventory with the percentage of each product in the inventory
+def show_inventory(inventory):
+    """
+    Inputs: the inventory (list of dictionaries)
+    Outputs: none, prints every product and the percentage of the total value it represents
+    Process: calculates the total value once, then goes through every product printing
+    its data and its percentage of participation
+    """
+    total = total_value_inventory(inventory)
+    print("Your actual inventory is: ")
+    for product in inventory:
+        name= product["name"]
+        price = product["price"]
+        quantity = product["quantity"]
+        value = value_price(price, quantity)
+        percentage = (value * 100) / total
+        print(name, "=", quantity, "items,", price, "$ each -", f"{percentage:.2f}", "% of the inventory")
+    print("Your total inventory value is:", f"{total:.2f}", "$")
 
 
 def main():
-    """
-The operations are with the initial inventory, the inventory doesn´t change with each sale or entering
-"""
-    print("Welcome! Enter 3 products: ")
-    counter= 1
-    while counter<=3:
-        product= str(input("Enter the name of the product: "))
-        price= float(input("Enter the unit price of the product: "))
-        quantity= int(input("Enter the quantity of the product: "))
-        value= value_price(price,quantity)
-        
-        if counter==1:
-            product1=product
-            price1=price
-            quantity1=quantity
-            value1= value
-            
-        elif counter==2:
-            product2=product
-            price2=price
-            quantity2=quantity
-            value2= value
-            
-        elif counter==3:
-            product3=product
-            price3=price
-            quantity3=quantity
-            value3= value
-        counter += 1
-    continuar = True   
-    while continuar==True:
-        menu()
-        option= int(input("What do you want to do? (Enter the number) "))
-        if option==1:
-            print ("Your actual inventory is: ")
-            print (product1,"=",quantity1,"items",price1,"$")
-            print (product2,"=",quantity2,"items",price2,"$")
-            print (product3,"=",quantity3,"items",price3,"$")
-            print ("Your total inventory is:",(total_value_inventory(value1,value2,value3)),"$")
-            per1= value1*100/(total_value_inventory(value1,value2,value3))
-            per2= value2*100/(total_value_inventory(value1,value2,value3))
-            per3= value3*100/(total_value_inventory(value1,value2,value3))
-            print (product1,"represents the",(f"{per1:.2f}"),"% of your total inventory")
-            print (product2,"represents the",(f"{per2:.2f}"),"% of your total inventory")
-            print (product3,"represents the",(f"{per3:.2f}"),"% of your total inventory")
-        elif option==2:
-            res=str(input("What item do you want register? "))
-            if res==product1:
-                initialstock= total_value_inventory(value1,value2,value3)
-                items= int(input("How many items are entering?"))
-                enter= items*(value1/quantity1)
-                print("Now your inventory is:",register_stock_entry(initialstock, enter))
-            elif res==product2:
-                initialstock= total_value_inventory(value1,value2,value3)
-                items= int(input("How many items are entering?"))
-                enter= items*(value2/quantity2)
-                print("Now your inventory is:",register_stock_entry(initialstock, enter))
-            elif res==product3:
-                initialstock= total_value_inventory(value1,value2,value3)
-                items= int(input("How many items are entering?"))
-                enter= items*(value3/quantity3)
-                print ("Now your inventory is:",register_stock_entry(initialstock, enter))
-        elif option==3:
-            res=str(input("What item do you want register? "))
-            if res==product1:
-                initialstock= total_value_inventory(value1,value2,value3)
-                items= int(input("How many items are getting out?"))
-                enter= items*(value1/quantity1)
-                print("Now your inventory is:",register_sale(initialstock, enter))
-            elif res==product2:
-                initialstock= total_value_inventory(value1,value2,value3)
-                items= int(input("How many items are getting out?"))
-                enter= items*(value2/quantity2)
-                print("Now your inventory is:",register_sale(initialstock, enter))
-            elif res==product3:
-                initialstock= total_value_inventory(value1,value2,value3)
-                items= int(input("How many items are getting out?"))
-                enter= items*(value3/quantity3)
-                print ("Now your inventory is:",register_sale(initialstock, enter))
-        elif option==4:
-            print ("Goodbye!")
-        
-        res= str(input("Do you want to go back to the initial menu?(y/n)"))
-        if res=="y":
-            continuar =True
-        elif res=="n":
-            continuar= False
-    
-main()
+    print("Welcome! Let's register your inventory.")
+    inventory = []
+    history = []
 
-    
-    
+    number_products = int(ask_valid_value("How many products do you want to register? "))
+    while number_products <= 0:
+        print("You need to register at least 1 product.")
+        number_products = int(ask_valid_value("How many products do you want to register? "))
+
+    counter = 1
+    while counter <= number_products:
+        print("Product ", counter)
+        name = ask_valid_name("Enter the name of the product: ", inventory)
+        price = ask_valid_value("Enter the unit price of the product: ")
+        quantity = int(ask_valid_value("Enter the quantity of the product: "))
+        product = {"name": name, "price": price, "quantity": quantity}
+        inventory.append(product)
+        counter += 1
+
+    show_inventory(inventory)
+
+    continuar = True
+    while continuar:
+        show_menu()
+        opcion = int(input("What do you want to do? "))
+
+        match opcion:
+            case 1:
+                show_inventory(inventory)
+
+            case 2:
+                search_name = input("What product do you want to register an entry for? ")
+                indice = search_product(inventory, search_name)
+                if indice == "the product does not exist":
+                    print("That product does not exist in your inventory.")
+                else:
+                    enter_quantity = int(ask_valid_value("How many items are entering? "))
+                    inventory[indice]["quantity"] = register_stock_entry(inventory[indice]["quantity"], enter_quantity)
+                    register_movement(history, "Entry", search_name, enter_quantity)
+                    print("Entry registered. New quantity of", search_name, "is", inventory[indice]["quantity"])
+
+            case 3:
+                search_name = input("What product do you want to register a sale for? ")
+                indice = search_product(inventory, search_name)
+                if indice == "the product does not exist":
+                    print("That product does not exist in your inventory.")
+                else:
+                    out_quantity = int(ask_valid_value("How many items are getting out? "))
+                    if out_quantity > inventory[indice]["quantity"]:
+                        print("You don't have enough stock for that sale.")
+                    else:
+                        inventory[indice]["quantity"] = register_sale(inventory[indice]["quantity"], out_quantity)
+                        register_movement(history, "Sale", search_name, out_quantity)
+                        print("Sale registered. New quantity of", search_name, "is", inventory[indice]["quantity"])
+
+            case 4:
+                continuar = False
+                print("Goodbye!")
+
+            case _:
+                print("Invalid option, try again.")
+
+
+main()
