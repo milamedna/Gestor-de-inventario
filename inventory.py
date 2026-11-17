@@ -1,20 +1,78 @@
 
 """
-Inventory Manager - Fase 3
+Inventory Manager
 
 Author: Camila Medina
 
 Algorithm
-Inputs: how many products to register, name/price/quantity for each one, and later the product name and quantity for every entry or sale the user wants to register
-Outputs: the current inventory (with percentage of participation of each product) and confirmation messages for every entry/sale
+Inputs: the menu option chosen, product name, unit price and quantity when a product is added, product name and quantity for every stock entry or sale
+Outputs: inventory reports, total value, low stock alerts, and the files catalog.txt and sales_history.txt
 Process:
-The program first asks how many products the user wants to manage, then for each one asks for its name, price and quantity, storing every product as a dictionary (name, price,
-quantity) inside a list called "inventario". A second structure, "history", is a matrix that keeps a record of every entry/sale registered, where each row is [type of movement, product name, quantity].
-The user then interacts with a menu to show the inventory, register an entry or a sale by typing the product's name, or exit. Because every product dictionary is stored by reference inside
-"inventory", every entry/sale updates the real data, so the inventory shown is always
-up to date.
+When the program starts it makes sure catalog.txt and sales_history.txt exist, and creates them empty if they do not. The catalog is loaded into the list "inventory", where each line becomes a dictionary
+(name, price, quantity). The user then picks options from the menu. Every time the inventory changes, catalog.txt is rewritten so nothing is lost. Every entry or sale is added at the end of
+sales_history.txt as soon as it happens. Choosing "Save and exit" closes the program.
 """
 
+
+CATALOG_FILE = "catalog.txt"
+SALES_HISTORY_FILE = "sales_history.txt"
+LOW_STOCK_LIMIT = 5
+
+
+#This function verifies if a file already exists, if not, creates it and leaves it empty.
+def ensure_file_exists(filename):
+    """
+    Inputs: the name of the file the program needs
+    Outputs: none, the file exists afterwards and its current content is not changed
+    Process: opens the file with append, which creates it if it is missing and keeps any content it already has, then closes it
+    """
+    with open(filename, "a", encoding= "utf-8") as file:
+        file.write("")
+        
+def load_catalog(filename):
+    """
+    Inputs: filename, the file with the  matrix inventory with each product as a line 
+    Outputs: the inventory
+    Process: reads every line of the matrix, splits it by commas, converts price and quantity to numbers and adds each product dictionary to the list
+    """
+    inventory= []
+    with open(filename, "r", encoding= "utf_8") as file:
+        for line in file:
+            line= line.strip()
+            if line != "":
+                product_name, product_price, product_quantity = line.split(",")
+                product = {
+                    "name": product_name,
+                    "price": float(product_price),
+                    "quantity": int(product_quantity),
+                }
+                inventory.append(product)
+    return inventory
+
+#This function writes the inventory into the file
+def save_catalog(filename, inventory):
+    """
+    Inputs: Receives the name of the file and the inventory with the dictionaries.
+    Outputs: None, the file gets filled with the inventory dictionaries
+    Process: opens the file with write and writes each product as a line
+    
+    """
+    with open(filename, "w", encoding="utf-8") as file:
+        for product in inventory:
+            product_line = f"{product['name']},{product['price']},{product['quantity']}\n"
+            file.write(product_line)
+            
+# This function adds one movement at the end of the sales history file
+def append_movement(filename, movement_type, name, quantity):
+    """
+    Inputs: filename, the history file, the movement type ("Entry" or "Sale"), the product name and the quantity
+    Outputs: none, one line type,name,quantity is added at the end of the history file
+    Process: opens the file with append and writes the new movement 
+    """
+    with open(filename, "a", encoding="utf-8") as file:
+        movement_line = f"{movement_type},{name},{quantity}\n"
+        file.write(movement_line)
+    
 
 # This function calculates the amount of money a certain quantity of a product represents
 def value_price(price, quantity):
@@ -77,13 +135,15 @@ def ask_valid_value(message):
 def ask_valid_name(message, inventory):
     """
     Inputs: the product the user enters, the current inventory
-    Outputs: a product name that is not empty and does not already exist in inventario
+    Outputs: a product name that is not empty and does not already exist in inventory
     Process: asks for a name and, while it is empty or already exists, keeps asking again
     """
     name = input(message).strip()
-    while name == "" or search_product(inventory, name) != "the product does not exist":
+    while name == "" or "," in name or search_product(inventory, name) != "the product does not exist":
         if name == "":
             print("The name cannot be empty, try again.")
+        elif "," in name:
+            print("The name cannot contain commas, try again.")
         else:
             print("That product already exists, try again.")
         name = input(message).strip()
@@ -104,107 +164,177 @@ def search_product(inventory, name):
         i += 1
     return "the product does not exist"
 
-
-# This function adds one row to the movements history matrix
-def register_movement(history, typeE, name, quantity):
+#This function adds a new product to the inventory and saves the catalog
+def add_new_product(inventory):
     """
-    Inputs: the history matrix, the type of movement ("Entry"/"Sale"), the product name and the quantity moved
-    Outputs: none, appends a new row [type, name, quantity] to the history matrix
-    Process: builds a row with the three values and appends it to historial
+    Inputs: the inventory, a list of dictionaries
+    Outputs: none, the new product is appended to the inventory and the catalog file is updated
+    Process: asks for a valid name, price and quantity, appends the product dictionary to the list
+             and rewrites the catalog file
     """
-    row= [typeE, name, quantity]
-    history.append(row)
+    product_name = ask_valid_name("Enter the name of the new product: ", inventory)
+    product_price = ask_valid_value("Enter the unit price of the product: ")
+    product_quantity = int(ask_valid_value("Enter the quantity of the product: "))
+    new_product = {"name": product_name, "price": product_price, "quantity": product_quantity}
+    inventory.append(new_product)
+    save_catalog(CATALOG_FILE, inventory)
+    print("Product", product_name, "was added to the inventory.")
+    
+    
+def register_stock_entry_for_product(inventory):
+    """
+    Inputs: the inventory that is a list of dictionaries
+    Outputs: none, the product quantity increases, the catalog is rewritten and the movement is added to the history file
+    Process: finds the product by name, asks for the incoming quantity, updates the quantity,saves the catalog and appends the movement to the sales history
+    """
+    product_name = input("What product do you want to register an entry for? ").strip()
+    product_index = search_product(inventory, product_name)
+    if product_index == "the product does not exist":
+        print("That product does not exist in your inventory.")
+    else:
+        incoming_quantity = int(ask_valid_value("How many items are entering? "))
+        current_quantity = inventory[product_index]["quantity"]
+        inventory[product_index]["quantity"] = register_stock_entry(current_quantity, incoming_quantity)
+        save_catalog(CATALOG_FILE, inventory)
+        append_movement(SALES_HISTORY_FILE, "Entry", product_name, incoming_quantity)
+        print("Entry registered. New quantity of", product_name, "is", inventory[product_index]["quantity"])
+        
+        
+# This function registers a sale for an existing product and saves the changes
+def register_sale_for_product(inventory):
+    """
+    Inputs: the inventory that is a list of dictionaries
+    Outputs: none, the product quantity decreases, the catalog is rewritten and the movement is added to the history file
+    Process: finds the product by name, asks for the outgoing quantity, checks there is enough stock,
+             updates the quantity, saves the catalog and appends the movement to the sales history
+    """
+    product_name = input("What product do you want to register a sale for? ").strip()
+    product_index = search_product(inventory, product_name)
+    if product_index == "the product does not exist":
+        print("That product does not exist in your inventory.")
+    else:
+        outgoing_quantity = int(ask_valid_value("How many items are getting out? "))
+        current_quantity = inventory[product_index]["quantity"]
+        if outgoing_quantity > current_quantity:
+            print("You don't have enough stock for that sale.")
+        else:
+            inventory[product_index]["quantity"] = register_sale(current_quantity, outgoing_quantity)
+            save_catalog(CATALOG_FILE, inventory)
+            append_movement(SALES_HISTORY_FILE, "Sale", product_name, outgoing_quantity)
+            print("Sale registered. New quantity of", product_name, "is", inventory[product_index]["quantity"])
 
 
-def show_menu():
-    print("1. Show inventory")
-    print("2. Register stock entry")
-    print("3. Register sale")
-    print("4. Exit")
+#This function searches for a product by name and shows its information
+def search_for_product(inventory):
+    """
+    Inputs: the inventory, a list of dictionaries
+    Outputs: none, the product information is printed or an error message is shown
+    Process: asks for a name, searches it in the inventory and prints its quantity, price and value
+    """
+    product_name = input("Which product do you want to search for? ").strip()
+    product_index = search_product(inventory, product_name)
+    if product_index == "the product does not exist":
+        print("That product does not exist in your inventory.")
+    else:
+        product = inventory[product_index]
+        product_value = value_price(product["price"], product["quantity"])
+        print(product["name"], "has", product["quantity"], "items,", product["price"], "$ each, value:", f"{product_value:.2f}", "$")
 
 
+    
 # This function prints the current state of the inventory with the percentage of each product in the inventory
 def show_inventory(inventory):
     """
-    Inputs: the inventory (list of dictionaries)
+    Inputs: the inventory, the list of dictionaries
     Outputs: none, prints every product and the percentage of the total value it represents
     Process: calculates the total value once, then goes through every product printing
-    its data and its percentage of participation
+    its data and its percentage of participation in the inventory
     """
     total = total_value_inventory(inventory)
     print("Your actual inventory is: ")
     for product in inventory:
-        name= product["name"]
-        price = product["price"]
-        quantity = product["quantity"]
-        value = value_price(price, quantity)
-        percentage = (value * 100) / total
-        print(name, "=", quantity, "items,", price, "$ each -", f"{percentage:.2f}", "% of the inventory")
+        product_value = value_price(product["price"], product["quantity"])
+        if total == 0:
+            percentage = 0
+        else:
+            percentage = (product_value * 100) / total
+        print(product["name"], "=", product["quantity"], "items,", product["price"], "$ each -", f"{percentage:.2f}", "% of the inventory")
+
+# This function prints the total value of the inventory
+def show_total_value(inventory):
+    """
+    Inputs: the inventory, a list of dictionaries
+    Outputs: none, the total value is printed on the screen
+    Process: calculates the total value with total_value_inventory and prints it with two decimals
+    """
+    total = total_value_inventory(inventory)
     print("Your total inventory value is:", f"{total:.2f}", "$")
+    
+
+# This function prints an alert for every product whose quantity is at or below the low stock limit
+def show_low_stock_alerts(inventory):
+    """
+    Inputs: the inventory, a list of dictionaries
+    Outputs: none, one alert line per low stock product is printed
+    Process: goes through every product and prints an alert when its quantity is at or below LOW_STOCK_LIMIT
+    """
+    alerts_found = 0
+    for product in inventory:
+        if product["quantity"] <= LOW_STOCK_LIMIT:
+            print("LOW STOCK:", product["name"], "has only", product["quantity"], "items left")
+            alerts_found += 1
+    if alerts_found == 0:
+        print("No products are low on stock.")
+
+
+def show_menu():
+    """
+    Inputs: none
+    Outputs: none, the menu options are printed on the screen
+    Process: prints each of the eight options.
+    """
+    print("1. Add new product")
+    print("2. Register stock entry")
+    print("3. Register sale")
+    print("4. Search product")
+    print("5. Show inventory")
+    print("6. Show total inventory value")
+    print("7. Show low stock alerts")
+    print("8. Save and exit")
 
 
 def main():
     print("Welcome! Let's register your inventory.")
-    inventory = []
-    history = []
 
-    number_products = int(ask_valid_value("How many products do you want to register? "))
-    while number_products <= 0:
-        print("You need to register at least 1 product.")
-        number_products = int(ask_valid_value("How many products do you want to register? "))
+    ensure_file_exists(CATALOG_FILE)
+    inventory = load_catalog(CATALOG_FILE)
 
-    counter = 1
-    while counter <= number_products:
-        print("Product ", counter)
-        name = ask_valid_name("Enter the name of the product: ", inventory)
-        price = ask_valid_value("Enter the unit price of the product: ")
-        quantity = int(ask_valid_value("Enter the quantity of the product: "))
-        product = {"name": name, "price": price, "quantity": quantity}
-        inventory.append(product)
-        counter += 1
+    ensure_file_exists(SALES_HISTORY_FILE)
 
-    show_inventory(inventory)
-
-    continuar = True
-    while continuar:
+    continuee = True
+    while continuee:
         show_menu()
-        opcion = int(input("What do you want to do? "))
+        option = int(input("What do you want to do? "))
 
-        match opcion:
+        match option:
             case 1:
-                show_inventory(inventory)
-
+                add_new_product(inventory)
             case 2:
-                search_name = input("What product do you want to register an entry for? ")
-                indice = search_product(inventory, search_name)
-                if indice == "the product does not exist":
-                    print("That product does not exist in your inventory.")
-                else:
-                    enter_quantity = int(ask_valid_value("How many items are entering? "))
-                    inventory[indice]["quantity"] = register_stock_entry(inventory[indice]["quantity"], enter_quantity)
-                    register_movement(history, "Entry", search_name, enter_quantity)
-                    print("Entry registered. New quantity of", search_name, "is", inventory[indice]["quantity"])
-
+                register_stock_entry_for_product(inventory)
             case 3:
-                search_name = input("What product do you want to register a sale for? ")
-                indice = search_product(inventory, search_name)
-                if indice == "the product does not exist":
-                    print("That product does not exist in your inventory.")
-                else:
-                    out_quantity = int(ask_valid_value("How many items are getting out? "))
-                    if out_quantity > inventory[indice]["quantity"]:
-                        print("You don't have enough stock for that sale.")
-                    else:
-                        inventory[indice]["quantity"] = register_sale(inventory[indice]["quantity"], out_quantity)
-                        register_movement(history, "Sale", search_name, out_quantity)
-                        print("Sale registered. New quantity of", search_name, "is", inventory[indice]["quantity"])
-
+                register_sale_for_product(inventory)
             case 4:
-                continuar = False
-                print("Goodbye!")
-
+                search_for_product(inventory)
+            case 5:
+                show_inventory(inventory)
+            case 6:
+                show_total_value(inventory)
+            case 7:
+                show_low_stock_alerts(inventory)
+            case 8:
+                continuee = False
+                print("Your data was saved. Goodbye!")
             case _:
                 print("Invalid option, try again.")
-
 
 main()
